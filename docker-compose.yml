@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  database:
+    image: postgres:15
+    container_name: jobapp_database
+    environment:
+      POSTGRES_DB: jobapp_management
+      POSTGRES_USER: jobapp_user
+      POSTGRES_PASSWORD: jobapp_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - jobapp_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U jobapp_user -d jobapp_management"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./app/backend
+      dockerfile: Dockerfile
+    container_name: jobapp_backend
+    environment:
+      DATABASE_URL: postgresql://jobapp_user:jobapp_password@database:5432/jobapp_management
+      SECRET_KEY: ${SECRET_KEY:-your-secret-key-here-change-in-production}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-your-jwt-secret-key-here-change-in-production}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      JWT_EXPIRATION_HOURS: ${JWT_EXPIRATION_HOURS:-24}
+      JSEARCH_API_KEY: ${JSEARCH_API_KEY:-}
+      ADZUNA_API_KEY: ${ADZUNA_API_KEY:-}
+      ADZUNA_APP_ID: ${ADZUNA_APP_ID:-}
+      ENVIRONMENT: ${ENVIRONMENT:-production}
+      DEBUG: ${DEBUG:-false}
+    ports:
+      - "8000:8000"
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - jobapp_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./app/frontend
+      dockerfile: Dockerfile
+      args:
+        REACT_APP_API_BASE_URL: ${REACT_APP_API_BASE_URL:-http://localhost:8000}
+    container_name: jobapp_frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - jobapp_network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  jobapp_network:
+    driver: bridge
