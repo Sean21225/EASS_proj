@@ -233,9 +233,6 @@ The application is designed to deploy easily on:
 - SQL injection protection through ORM
 - CORS configuration for cross-origin requests
 
-## License
-
-This project is licensed under the MIT License. See LICENSE file for details.
 
 ## Support
 
@@ -251,3 +248,6 @@ For support and questions:
 - **June 2025**: Implemented free resume optimization service
 - **June 2025**: Integrated JSearch API for comprehensive job search
 - **June 2025**: Reorganized project structure for better maintainability
+
+## Youtube video demo link
+https://youtu.be/Kmeh-G32HiE
